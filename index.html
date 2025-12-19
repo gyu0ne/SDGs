@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL 포지션별 데이터 분석 - 1307 김규원</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #0f172a;       /* 짙은 네이비 (Slate 900) */
+            --bg-glass: rgba(30, 41, 59, 0.6); /* 반투명 카드 */
+            --border-glass: rgba(255, 255, 255, 0.1);
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            
+            --accent-gold: #fbbf24;   /* 밝은 골드 */
+            --accent-blue: #22d3ee;   /* 사이안 블루 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-main);
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-main) 70%); /* 은은한 배경 조명 */
+            color: var(--text-primary);
+            line-height: 1.7;
+            padding: 60px 20px;
+            min-height: 100vh;
+            margin-top: 100px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        /* --- Header: 고급스러운 애니메이션 --- */
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        /* 타이틀 애니메이션: 부드럽게 흐르는 금빛 */
+        @keyframes shine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            letter-spacing: -1.5px;
+            
+            /* 텍스트 그라데이션 */
+            background: linear-gradient(
+                90deg, 
+                #fff 0%, 
+                var(--accent-gold) 25%, 
+                #fff 50%, 
+                var(--accent-blue) 75%, 
+                #fff 100%
+            );
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            
+            animation: shine 8s ease infinite; /* 천천히 흐르도록 설정 */
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            margin-bottom: 25px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--accent-gold);
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        /* --- Sections: 깔끔한 분리 --- */
+        section {
+            margin-bottom: 60px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .section-number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.05); /* 배경에 은은하게 깔리는 숫자 */
+            line-height: 1;
+            margin-right: 15px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        p.desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-left: 5px;
+        }
+
+        /* --- Cards: Glassmorphism (유리 효과) --- */
+        .card-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px); /* 블러 효과 */
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 30px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 랭킹 뱃지 스타일 */
+        .rank-badge {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        /* 데이터 강조 */
+        .stat-display {
+            display: flex;
+            align-items: baseline;
+            margin: 15px 0 20px 0;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-right: 10px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--accent-gold); /* 제목에 포인트 컬러 */
+        }
+
+        /* 리스트 스타일 정리 */
+        ul {
+            list-style: none;
+            border-top: 1px solid var(--border-glass);
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            color: #cbd5e1;
+            padding-left: 20px;
+            position: relative;
+            font-size: 1rem;
+        }
+
+        li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+        }
+
+        /* 강조 텍스트 */
+        .highlight {
+            color: #fff;
+            font-weight: 600;
+            background: linear-gradient(180deg, transparent 65%, rgba(34, 211, 238, 0.2) 65%); /* 형광펜 효과 */
+        }
+
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.8rem; }
+            .section-number { display: none; }
+            .stat-value { font-size: 2.5rem; }
+            .card { padding: 25px; }
+        }
+    </style>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+</head>
+<body>
+
+    <div class="container">
+        
+        <header>
+            <h1>리그 오브 레전드 포지션에<br>따른 구조적 불평등</h1>
+            <p class="subtitle">무언가에 대하여 그것이 무엇인지 알 수 없다는 사실이 무엇을 의미하는지에 대해 나는 알 수 없다</p>
+            <div class="badge">1307 김규원</div>
+        </header>
+
+        <main>
+            <section>
+                <div class="section-header">
+                    <span class="section-number">01</span>
+                    <div>
+                        <h2>동기 및 목표 설정</h2>
+                    </div>
+                </div>
+                <div style="margin-top: 40px; margin-bottom: 20px; display:table;border:2px dashed #ccc;border-left:5px solid #C89B3C;padding:1em" data-dark-style="border-color:#383b40;border-left-color:#C89B3C" data-v-83fb58a6="" class="_a7289b14229a544cc5464efeb6b28c64">리그 오브 레전드는 5명의 강력한 챔피언으로 구성된 양 팀이 서로의 기지를 파괴하기 위해 치열한 사투를 벌이는 전략 게임입니다. 170여 명의 챔피언 중 하나를 선택해 화려한 플레이를 펼치며 적을 처치하고 포탑을 파괴해 승리를 쟁취하세요.</div>
+                <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                    <p class="desc">
+                        '리그 오브 레전드(이하 '롤')'는 라이엇 게임즈에서 개발한 MOBA 게임으로, LOL(영어권) 등의 약칭으로 불린다. 본 게임은 5개의 포지션(탑, 정글, 미드, 원딜, 서폿)으로 구성된 양팀이 서로 경쟁하는 형태로 진행된다. 이때 각 포지션 간에 있어 게임 내/외적으로 불평등한 점들이 있어 이를 해결하고자 한다.
+                    </p>
+                </div>
+                <div style="display: flex; margin-top: 30px;">
+                    <img width="175px" height="175px" src="Figure_2.png" style="margin-right: 30px;"><img height="175px" src="Figure_3.jpg">
+                </div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <span class="section-number">02</span>
+                    <div>
+                        <h2>데이터셋 (Dataset)</h2>
+                    </div>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--accent-blue);">
+                    <p class="desc">
+                        <strong>Source:</strong> Kaggle (League of Legends Match Dataset (2024))<br>
+                        정확한 실력 지표 분석을 위해 <span class="highlight">랭크 게임(Solo/Duo)</span> 데이터만을 추출하여 활용했습니다.
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <div class="section-header">
+                    <span class="section-number">03</span>
+                    <div>
+                        <h2>분석 결과 : 상관관계</h2>
+                        <p class="desc">골드 격차와 승패의 연관성 분석</p>
+                    </div>
+                </div>
+
+                <div class="card-grid">
+<iframe
+  src="https://carbon.now.sh/embed?bg=rgba%280%2C0%2C0%2C1%29&t=vscode&wt=none&l=python&width=966.25&ds=true&dsyoff=20px&dsblur=68px&wc=true&wa=false&pv=0px&ph=0px&ln=false&fl=1&fm=Hack&fs=14px&lh=133%25&si=false&es=2x&wm=false&code=import%2520pandas%2520as%2520pd%250Aimport%2520seaborn%2520as%2520sns%250Aimport%2520matplotlib.pyplot%2520as%2520plt%250A%250A%2523%2520---%25201.%2520%25EB%258D%25B0%25EC%259D%25B4%25ED%2584%25B0%2520%25EB%25B6%2588%25EB%259F%25AC%25EC%2598%25A4%25EA%25B8%25B0%2520---%250Afile_path%2520%253D%2520%27league_data.xlsx%27%2520%2523%2520%25EC%258B%259C%25EC%258A%25A4%25ED%2585%259C%25EC%2597%2590%2520%25EC%2597%2585%25EB%25A1%259C%25EB%2593%259C%25EB%2590%259C%2520%25ED%258C%258C%25EC%259D%25BC%2520%25EA%25B2%25BD%25EB%25A1%259C%250Atry%253A%250A%2520%2520%2520%2520df%2520%253D%2520pd.read_excel%28file_path%252C%2520engine%253D%27openpyxl%27%29%250A%250Aexcept%2520FileNotFoundError%253A%250A%2520%2520%2520%2520print%28f%2522%25EC%2598%25A4%25EB%25A5%2598%253A%2520%27%257Bfile_path%257D%27%2520%25ED%258C%258C%25EC%259D%25BC%25EC%259D%2584%2520%25EC%25B0%25BE%25EC%259D%2584%2520%25EC%2588%2598%2520%25EC%2597%2586%25EC%258A%25B5%25EB%258B%2588%25EB%258B%25A4.%2522%29%250Aexcept%2520Exception%2520as%2520e%253A%250A%2520%2520%2520%2520print%28f%2522%25ED%258C%258C%25EC%259D%25BC%25EC%259D%2584%2520%25EC%259D%25BD%25EB%258A%2594%2520%25EC%25A4%2591%2520%25EC%2598%25A4%25EB%25A5%2598%25EA%25B0%2580%2520%25EB%25B0%259C%25EC%2583%259D%25ED%2596%2588%25EC%258A%25B5%25EB%258B%2588%25EB%258B%25A4%253A%2520%257Be%257D%2522%29%250A%250A%2523%25202.%2520%25EB%258D%25B0%25EC%259D%25B4%25ED%2584%25B0%2520%25EC%25A0%2584%25EC%25B2%2598%25EB%25A6%25AC%250Aclassic_df%2520%253D%2520df%255Bdf%255B%27game_mode%27%255D%2520%253D%253D%2520%27CLASSIC%27%255D.copy%28%29%250A%250Agame_counts%2520%253D%2520classic_df%255B%27game_id%27%255D.value_counts%28%29%250Acomplete_games%2520%253D%2520game_counts%255Bgame_counts%2520%253D%253D%252010%255D.index%250Aclassic_df%2520%253D%2520classic_df%255Bclassic_df%255B%27game_id%27%255D.isin%28complete_games%29%255D%250A%250A%2523%25203.%2520%25EB%25B8%2594%25EB%25A3%25A8%25ED%258C%2580%28100%29%2520vs%2520%25EB%25A0%2588%25EB%2593%259C%25ED%258C%2580%28200%29%2520%25EB%258D%25B0%25EC%259D%25B4%25ED%2584%25B0%2520%25EB%25B6%2584%25EB%25A6%25AC%2520%25EB%25B0%258F%2520%25EB%25B3%2591%25ED%2595%25A9%250Ablue_team%2520%253D%2520classic_df%255Bclassic_df%255B%27team_id%27%255D%2520%253D%253D%2520100%255D%250Ared_team%2520%253D%2520classic_df%255Bclassic_df%255B%27team_id%27%255D%2520%253D%253D%2520200%255D%250A%250Amerged_df%2520%253D%2520pd.merge%28%250A%2520%2520%2520%2520blue_team%255B%255B%27game_id%27%252C%2520%27team_position%27%252C%2520%27gold_earned%27%252C%2520%27win%27%255D%255D%252C%2520%250A%2520%2520%2520%2520red_team%255B%255B%27game_id%27%252C%2520%27team_position%27%252C%2520%27gold_earned%27%255D%255D%252C%2520%250A%2520%2520%2520%2520on%253D%255B%27game_id%27%252C%2520%27team_position%27%255D%252C%2520%250A%2520%2520%2520%2520suffixes%253D%28%27_blue%27%252C%2520%27_red%27%29%250A%29%250A%250A%2523%25204.%2520%25EA%25B3%25A8%25EB%2593%259C%2520%25EA%25B2%25A9%25EC%25B0%25A8%28Diff%29%2520%25EA%25B3%2584%25EC%2582%25B0%253A%2520%28%25EB%25B8%2594%25EB%25A3%25A8%25ED%258C%2580%2520%25EA%25B3%25A8%25EB%2593%259C%2520-%2520%25EB%25A0%2588%25EB%2593%259C%25ED%258C%2580%2520%25EA%25B3%25A8%25EB%2593%259C%29%250Amerged_df%255B%27gold_diff%27%255D%2520%253D%2520merged_df%255B%27gold_earned_blue%27%255D%2520-%2520merged_df%255B%27gold_earned_red%27%255D%250A%250A%2523%25205.%2520%25ED%2594%25BC%25EB%25B2%2597%2520%25ED%2585%258C%25EC%259D%25B4%25EB%25B8%2594%2520%25EC%2583%259D%25EC%2584%25B1%2520%28%25ED%2596%2589%253A%2520%25EA%25B2%258C%25EC%259E%2584%252C%2520%25EC%2597%25B4%253A%2520%25ED%258F%25AC%25EC%25A7%2580%25EC%2585%2598%252C%2520%25EA%25B0%2592%253A%2520%25EA%25B3%25A8%25EB%2593%259C%2520%25EA%25B2%25A9%25EC%25B0%25A8%29%250Apivot_df%2520%253D%2520merged_df.pivot%28index%253D%27game_id%27%252C%2520columns%253D%27team_position%27%252C%2520values%253D%27gold_diff%27%29%250A%250Apivot_df.rename%28columns%253D%257B%250A%2520%2520%2520%2520%27BOTTOM%27%253A%2520%27ADC%27%252C%250A%2520%2520%2520%2520%27UTILITY%27%253A%2520%27SUPPORT%27%252C%250A%2520%2520%2520%2520%27MIDDLE%27%253A%2520%27MID%27%252C%250A%2520%2520%2520%2520%27JUNGLE%27%253A%2520%27JUNGLE%27%252C%250A%2520%2520%2520%2520%27TOP%27%253A%2520%27TOP%27%250A%257D%252C%2520inplace%253DTrue%29%250A%250Awin_data%2520%253D%2520blue_team%255B%255B%27game_id%27%252C%2520%27win%27%255D%255D.drop_duplicates%28%29.set_index%28%27game_id%27%29%250Afinal_df%2520%253D%2520pivot_df.join%28win_data%29%250Afinal_df%255B%27win%27%255D%2520%253D%2520final_df%255B%27win%27%255D.astype%28int%29%250A%250A%2523%25206.%2520%25EC%2583%2581%25EA%25B4%2580%25EA%25B4%2580%25EA%25B3%2584%2520%25EB%25B6%2584%25EC%2584%259D%2520%25EB%25B0%258F%2520%25ED%259E%2588%25ED%258A%25B8%25EB%25A7%25B5%2520%25EC%258B%259C%25EA%25B0%2581%25ED%2599%2594%250Acorrelation_matrix%2520%253D%2520final_df.corr%28%29%250A%250Aplt.figure%28figsize%253D%2810%252C%25208%29%29%250Asns.heatmap%28correlation_matrix%252C%2520annot%253DTrue%252C%2520fmt%253D%2522.2f%2522%252C%2520cmap%253D%27coolwarm%27%252C%2520vmin%253D-1%252C%2520vmax%253D1%29%250Aplt.title%28%27Position%2520Gold%2520Diff%2520vs%2520Win%2520Correlation%2520%28Real%2520Data%29%27%252C%2520fontsize%253D15%29%250Aplt.show%28%29%250A%250A%2523%2520%25EC%2588%2598%25EC%25B9%2598%25EB%25A1%259C%2520%25ED%2599%2595%25EC%259D%25B8%250Aprint%28%2522%253D%253D%253D%2520%25ED%258F%25AC%25EC%25A7%2580%25EC%2585%2598%25EB%25B3%2584%2520%25EA%25B3%25A8%25EB%2593%259C%2520%25EA%25B2%25A9%25EC%25B0%25A8%25EC%2599%2580%2520%25EC%258A%25B9%25EB%25A6%25AC%25EC%259D%2598%2520%25EC%2583%2581%25EA%25B4%2580%25EA%25B3%2584%25EC%2588%2598%2520%28%25EB%2586%2592%25EC%259D%2584%25EC%2588%2598%25EB%25A1%259D%2520%25EC%2598%2581%25ED%2596%25A5%25EB%25A0%25A5%2520%25ED%2581%25BC%29%2520%253D%253D%253D%2522%29%250Aprint%28correlation_matrix%255B%255B%27win%27%255D%255D.sort_values%28by%253D%27win%27%252C%2520ascending%253DFalse%29.drop%28%27win%27%29%29"
+  style="width: 966px; height: 1200px; border:0; transform: scale(1); overflow:hidden;"
+  sandbox="allow-scripts allow-same-origin">
+</iframe>
+
+<img width="966px" src="Figure_1.png">
+
+                    <article class="card">
+                        <div class="rank-badge">★ Rank 1</div>
+                        <h3>서포터 : 극단적 빈부격차</h3>
+                        <div class="stat-display">
+                            <span class="stat-value">0.60</span>
+                            <span class="stat-label">Correlation Coefficient</span>
+                        </div>
+                        <ul>
+                            <li><strong>구조적 빈곤 : </strong>라이너들은 게임이 불리해도 타워 안으로 밀려오는 미니언을 받아먹으며 최소한의 골드를 수급할 수 있습니다. 하지만 서포터는 CS를 먹지 않도록 설계된 포지션입니다. 서포터의 주 수입원은 '어시스트', '타워 철거 보상', '와드 파괴'입니다.</li>
+                            <li><strong>복구 불가능성 : </strong>팀이 지고 있으면 킬을 못 따니 어시스트 골드가 없고, 라인을 밀리니 타워 골드도 없으며, 맵 장악을 당해 와드를 지우러 나갈 수도 없습니다. 즉, 지는 팀 서포터는 수입이 '0'에 수렴하게 됩니다. 반면 이기는 팀 서포터는 맵 전역의 오브젝트 골드와 어시스트를 챙깁니다.</li>
+                            <li><strong>결론 : </strong>서포터의 높은 골드 상관계수는 '승리한 팀의 서포터가 누리는 부'와 '패배한 팀 서포터의 빈곤'의 격차가 다른 어떤 포지션보다 극단적임을 의미합니다.</li>
+                        </ul>
+                    </article>
+
+                    <article class="card">
+                        <div class="rank-badge">Rank 2</div>
+                        <h3>정글러 : 제로섬 게임의 지배자</h3>
+                        <div class="stat-display">
+                            <span class="stat-value">0.59</span>
+                            <span class="stat-label">Correlation Coefficient</span>
+                        </div>
+                        <ul>
+                            <li><strong>자원의 독점과 박탈 : </strong>탑이나 미드는 내가 이겨도 상대의 미니언을 뺏어 먹는 것이 제한적입니다(타워가 지켜주니까요). 하지만 정글은 내가 강해지면 상대 정글 지역(카정)을 들어가 상대의 성장 동력 자체를 빼앗아 먹을 수 있습니다.</li>
+                            <li><strong>오브젝트 스노우볼 : </strong>승리하는 정글러는 바위게, 전령, 용, 바론 등 중립 몬스터 골드를 <span class="highlight">독식합니다.</span></li>
+                            <li><strong>결론 : </strong>정글 차이가 난다는 것은 단순히 한 명이 잘 컸다는 뜻이 아니라, 상대방이 커야 할 자원을 내가 가져와서 격차를 2배로 벌렸다는 뜻이 됩니다. 그래서 골드 격차가 승패와 직결됩니다.</li>
+                        </ul>
+                    </article>
+
+                    <article class="card">
+                        <div class="rank-badge">Rank 3</div>
+                        <h3>라이너 : 최소한의 안전장치</h3>
+                        <div class="stat-display">
+                            <span class="stat-value">0.55</span>
+                            <span class="stat-label">Correlation Coefficient</span>
+                        </div>
+                        <ul>
+                            <li><strong>파밍이라는 안전장치 : </strong>게임이 져서 본진에 갇히더라도, 슈퍼 미니언이 밀려오면 원딜과 미드는 그것을 받아먹으며 골드를 챙깁니다. 팀은 패배하더라도 개인의 골드 획득량은 어느 정도 방어가 됩니다.</li>
+                            <li><strong>사이드 운영 (탑) : </strong>탑 라이너는 팀이 지고 있어도 반대편 사이드 라인에 가서 혼자 라인을 밀며 골드를 수급할 수 있는 기회가 잦습니다.</li>
+                            <li><strong>결론 : </strong>라이너들은 게임의 승패와 무관하게 개인의 성장을 어느 정도 도모할 수 있는 시스템적 보호 장치(미니언 웨이브)가 존재합니다. 따라서 '골드 차이'가 서포터나 정글러만큼 극단적으로 승패를 대변하지는 않습니다.</li>
+                        </ul>
+                    </article>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            &copy; 2025 1307 KIM GYUWON. All rights reserved.
+        </footer>
+    </div>
+
+</body>
+</html>
